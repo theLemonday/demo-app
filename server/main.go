@@ -55,6 +55,18 @@ func toggleTodoByID(id int) bool {
 	return false
 }
 
+func deleteTodo(id int) {
+	mu.Lock()
+	defer mu.Unlock()
+	var newTodos []Todo
+	for _, t := range todos {
+		if id != t.ID {
+			newTodos = append(newTodos, t)
+		}
+	}
+	todos = newTodos
+}
+
 func getTodosHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(getAllTodos())
@@ -85,12 +97,17 @@ func toggleTodoHandler(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusNoContent)
 }
 
-func main() {
-	port := os.Getenv("PORT")
-	if port == "" {
-		port = "8080"
+func deleteTodoHandler(w http.ResponseWriter, r *http.Request) {
+	idParam := chi.URLParam(r, "id")
+	id, err := strconv.Atoi(idParam)
+	if err != nil {
+		log.Println(err)
 	}
+	deleteTodo(id)
+	w.WriteHeader(http.StatusNoContent)
+}
 
+func main() {
 	r := chi.NewRouter()
 	r.Use(cors.Handler(cors.Options{
 		// AllowedOrigins:   []string{"https://foo.com"}, // Use this to allow specific origin hosts
@@ -107,8 +124,12 @@ func main() {
 	r.Get("/api/todos", getTodosHandler)
 	r.Post("/api/todos", addTodoHandler)
 	r.Post("/api/todos/{id}/toggle", toggleTodoHandler)
+	r.Delete("/api/todos/{id}", deleteTodoHandler)
 
+	port := os.Getenv("PORT")
+	if port == "" {
+		port = "8080"
+	}
 	log.Printf("Server running on http://localhost:%s", port)
-
 	log.Fatal(http.ListenAndServe(":"+port, r))
 }

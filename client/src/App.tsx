@@ -1,5 +1,3 @@
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
 import './App.css'
 
 import { useEffect, useState } from "react";
@@ -13,20 +11,20 @@ interface Todo {
 function App() {
   const [todos, setTodos] = useState<Todo[]>([]);
   const [newTodo, setNewTodo] = useState<string>("");
-  const API_URL = import.meta.env.VITE_API_URL;
+  // const API_URL = import.meta.env.VITE_API_URL;
 
   useEffect(() => {
     fetchTodos();
   }, []);
 
   const fetchTodos = async () => {
-    const res = await fetch(`${API_URL}/api/todos`);
+    const res = await fetch(`/api/todos`);
     const data = await res.json();
     setTodos(data);
   };
 
   const addTodo = async () => {
-    const res = await fetch(`${API_URL}/api/todos`, {
+    const res = await fetch(`/api/todos`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ title: newTodo, done: false })
@@ -38,11 +36,18 @@ function App() {
   };
 
   const toggleTodo = async (id: number) => {
-    await fetch(`${API_URL}/api/todos/${id}/toggle`, {
+    await fetch(`/api/todos/${id}/toggle`, {
       method: "POST"
     });
     fetchTodos();
   };
+
+  	const deleteTodo = async (id: number) => {
+		await fetch(`/api/todos/${id}`, {
+			method: "DELETE",
+		});
+		setTodos(todos.filter((todo) => todo.id !== id));
+	};
 
   return (
     <div className="min-h-screen bg-gray-100 p-10">
@@ -80,6 +85,7 @@ function App() {
               >
                 {todo.done ? "Undo" : "Done"}
               </button>
+              						<button onClick={() => deleteTodo(todo.id)}>Delete</button>
             </li>
           ))}
         </ul>
