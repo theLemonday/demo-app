@@ -1,0 +1,7 @@
+---
+frontendImage: lemonday/todo-frontend
+frontendVersion: latest
+frontendNodePort: 30080
+
+backendImage: lemonday/todo-backend
+backendVersion: latest
