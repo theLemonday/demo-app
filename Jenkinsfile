@@ -35,6 +35,7 @@ spec:
     DOCKER_HUB_USER = "lemonday"
     GIT_APP_REPO_URL = "https://github.com/theLemonday/demo-app"
     GIT_CONFIG_REPO_URL = "https://github.com/theLemonday/demo-app-values"
+    GIT_CONFIG_REPO_CREDENTIALS_ID = "github-config-repo-creds"
   }
 
   stages {
@@ -74,6 +75,32 @@ spec:
           }
         }
       }
+    }
+
+    stage ('Update K8s config repo') {
+      script {
+        def gitCommit = sh(script: 'git rev-parse HEAD', returnStdout: true).trim().substring(0, 8)
+
+        echo "Begin update config repo"
+
+        withCredentials([usernamePassword(credentialsId: GIT_CONFIG_REPO_CREDENTIALS_ID, variable: 'GIT_USER', passwordVariable: 'GIT_PASS')]) {
+          sh "git clone -b main https://${GIT_USER}:${GIT_PASS}@github.com/theLemonday/demo-app-values config-repo"
+
+          dir ('config-repo') {
+            echo "Update values.yaml"
+
+            sh "sed -i 's|frontendVersion: .*|frontendVersion: ${gitCommit}|g' values.yaml"
+            sh "sed -i 's|backendVersion: .*|backendVersion: ${gitCommit}|g' values.yaml"
+
+            sh "git config user.email 'jenkins@example.com'"
+            sh "git config user.name 'Jenkins CI'"
+
+            sh "git add values.yaml"
+            sh "git commit -m 'ci: Cập nhật image tag lên ${gitCommit}'"
+            sh "git push origin main"
+          }
+
+        }
     }
   }
 }
