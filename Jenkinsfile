@@ -49,32 +49,35 @@ spec:
             }
         }
 
-        stage('Build & Push Docker Image (with Kaniko)') {
-            steps {
-                // THAY ĐỔI: Chạy `script` ở ngoài `container` để lấy git commit trước
-                script {
-                    // Bước 1: Lấy git commit hash trong container mặc định 'jnlp' (nơi có git)
-                    def gitCommit = sh(script: 'git rev-parse HEAD', returnStdout: true).trim().substring(0, 8)
-                    def images = ['frontend', 'backend']
-
-                    for (image in images) {
-                        def dockerImageTag = "todo-${image}:${gitCommit}"
-                        echo "Building ${dockerImageTag}"
-
-                        container('kaniko') {
-                            sh """
-              /kaniko/executor \\
-              --context `pwd`/${image} \\
-              --dockerfile `pwd`/${image}/Dockerfile \\
-              --destination ${dockerImageTag}
-              """
-                        }
-
-                        echo "Finished building ${dockerImageTag}"
-                    }
-                }
-            }
-        }
+        // stage('Build & Push Docker Image (with Kaniko)') {
+        //     steps {
+        //         // THAY ĐỔI: Chạy `script` ở ngoài `container` để lấy git commit trước
+        //         script {
+        //             // Bước 1: Lấy git commit hash trong container mặc định 'jnlp' (nơi có git)
+        //             def gitCommit = sh(script: 'git rev-parse HEAD', returnStdout: true).trim().substring(0, 8)
+        //             def images = ['frontend', 'backend']
+        //
+        //             for (image in images) {
+        //                 def dockerImageTag = "todo-${image}:${gitCommit}"
+        //                 echo "Building ${dockerImageTag}"
+        //
+        //                 container('kaniko') {
+        //                     stage('Use kaniko to build image') {
+        //                         sh """
+        //                         /kaniko/executor \\
+        //                         --cleanup \\
+        //                         --context `pwd`/${image} \\
+        //                         --dockerfile `pwd`/${image}/Dockerfile \\
+        //                         --destination lemonday/${dockerImageTag} && rm -rf /kaniko/*[0-9]* && rm -rf /kaniko/Dockerfile && mkdir -p /workspace
+        //                         """
+        //                     }
+        //                 }
+        //
+        //                 echo "Finished building ${dockerImageTag}"
+        //             }
+        //         }
+        //     }
+        // }
 
         stage('Update K8s config repo') {
             steps {
@@ -83,7 +86,7 @@ spec:
 
                     echo 'Begin update config repo'
 
-                    withCredentials([usernamePassword(credentialsId: GIT_CONFIG_REPO_CREDENTIALS_ID, variable: 'GIT_USER', passwordVariable: 'GIT_PASS')]) {
+                    withCredentials([usernamePassword(credentialsId: env.GIT_CONFIG_REPO_CREDENTIALS_ID, usernameVariable: 'GIT_USER', passwordVariable: 'GIT_PASS')]) {
                         sh "git clone -b main https://${GIT_USER}:${GIT_PASS}@github.com/theLemonday/demo-app-values config-repo"
 
                         dir('config-repo') {

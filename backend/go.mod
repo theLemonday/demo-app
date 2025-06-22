@@ -1,4 +1,4 @@
-module github.com/theLemonday/demo-app/server
+module github.com/theLemonday/demo-app/backend
 
 go 1.24.3
 
