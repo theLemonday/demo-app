@@ -55,16 +55,23 @@ spec:
         script {
           // Bước 1: Lấy git commit hash trong container mặc định 'jnlp' (nơi có git)
           def gitCommit = sh(script: 'git rev-parse HEAD', returnStdout: true).trim().substring(0, 8)
-          def dockerImageTag = "${DOCKER_IMAGE_NAME}:${gitCommit}"
+          def images = ["frontend", "backend"]
 
-          // Bước 2: Đi vào container 'kaniko' để thực hiện build
-          container('kaniko') {
-            // echo "Đang build và push image với Kaniko: ${dockerImageTag}"
+          for (image in images) {
+            def dockerImageTag = "todo-${image}:${gitCommit}"
+            echo "Building ${dockerImageTag}"
+
+            container('kaniko') {
               sh """
-              /kaniko/executor --context `pwd`/backend --dockerfile `pwd`/backend/Dockerfile  --destination lemonday/todo-backend
-            """
+              /kaniko/executor \\
+              --context `pwd`/${image} \\
+              --dockerfile `pwd`/${image}/Dockerfile \\
+              --destination ${dockerImageTag}
+              """
+            }
+
+            echo "Finished building ${dockerImageTag}"
           }
-          echo "Build và push với Kaniko thành công."
         }
       }
     }
