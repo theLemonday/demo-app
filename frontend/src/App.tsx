@@ -1,4 +1,4 @@
-import './App.css'
+import "./App.css";
 
 import { useEffect, useState } from "react";
 
@@ -27,7 +27,7 @@ function App() {
     const res = await fetch(`/api/todos`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ title: newTodo, done: false })
+      body: JSON.stringify({ title: newTodo, done: false }),
     });
     if (res.ok) {
       setNewTodo("");
@@ -37,17 +37,17 @@ function App() {
 
   const toggleTodo = async (id: number) => {
     await fetch(`/api/todos/${id}/toggle`, {
-      method: "POST"
+      method: "POST",
     });
     fetchTodos();
   };
 
-  	const deleteTodo = async (id: number) => {
-		await fetch(`/api/todos/${id}`, {
-			method: "DELETE",
-		});
-		setTodos(todos.filter((todo) => todo.id !== id));
-	};
+  const deleteTodo = async (id: number) => {
+    await fetch(`/api/todos/${id}`, {
+      method: "DELETE",
+    });
+    setTodos(todos.filter((todo) => todo.id !== id));
+  };
 
   return (
     <div className="min-h-screen bg-gray-100 p-10">
@@ -85,11 +85,14 @@ function App() {
               >
                 {todo.done ? "Undo" : "Done"}
               </button>
-              						<button onClick={() => deleteTodo(todo.id)}>Delete</button>
+              <button onClick={() => deleteTodo(todo.id)}>Delete</button>
             </li>
           ))}
         </ul>
       </div>
+      <span>
+        ⚙️ Powered by <strong>Argo CD</strong> + <strong>Jenkins</strong>
+      </span>
     </div>
   );
 }
