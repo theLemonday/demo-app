@@ -13,6 +13,8 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/go-chi/cors"
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
 
 type Todo struct {
@@ -22,9 +24,27 @@ type Todo struct {
 }
 
 var (
-	todos []Todo
-	mu    sync.Mutex
+	todos         []Todo
+	mu            sync.Mutex
+	totalRequests = prometheus.NewCounterVec(
+		prometheus.CounterOpts{
+			Name: "http_requests_total",
+			Help: "Count of all HTTP requests",
+		},
+		[]string{"method", "path"},
+	)
+
+	todosCreated = prometheus.NewCounter(
+		prometheus.CounterOpts{
+			Name: "todos_created_total",
+			Help: "Number of todos created",
+		},
+	)
 )
+
+func init() {
+	prometheus.MustRegister(totalRequests, todosCreated)
+}
 
 func getAllTodos() []Todo {
 	mu.Lock()
@@ -68,17 +88,23 @@ func deleteTodo(id int) {
 }
 
 func getTodosHandler(w http.ResponseWriter, r *http.Request) {
+	totalRequests.WithLabelValues("GET", "/api/todos").Inc()
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(getAllTodos())
 }
 
 func addTodoHandler(w http.ResponseWriter, r *http.Request) {
+	totalRequests.WithLabelValues("POST", "/api/todos").Inc()
+
 	var newTodo Todo
 	if err := json.NewDecoder(r.Body).Decode(&newTodo); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 	created := createTodo(newTodo)
+
+	todosCreated.Inc()
+
 	w.WriteHeader(http.StatusCreated)
 	json.NewEncoder(w).Encode(created)
 }
@@ -98,12 +124,15 @@ func toggleTodoHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func deleteTodoHandler(w http.ResponseWriter, r *http.Request) {
+	totalRequests.WithLabelValues("DELETE", "/api/todos/{id}").Inc()
+
 	idParam := chi.URLParam(r, "id")
 	id, err := strconv.Atoi(idParam)
 	if err != nil {
 		log.Println(err)
 	}
 	deleteTodo(id)
+
 	w.WriteHeader(http.StatusNoContent)
 }
 
@@ -125,6 +154,8 @@ func main() {
 	r.Post("/api/todos", addTodoHandler)
 	r.Post("/api/todos/{id}/toggle", toggleTodoHandler)
 	r.Delete("/api/todos/{id}", deleteTodoHandler)
+
+	r.Handle("/metrics", promhttp.Handler())
 
 	port := os.Getenv("PORT")
 	if port == "" {
