@@ -22,6 +22,12 @@ data:
         proxy_set_header X-Forwarded-Proto $scheme;
       }
 
+      location /nginx_status {
+        stub_status;
+        allow 127.0.0.1;
+        deny all;
+      }
+
       location / {
         try_files $uri $uri/ /index.html;
       }
@@ -43,6 +49,12 @@ spec:
         app: frontend
     spec:
       containers:
+        - name: nginx-exporter
+          image: nginx/nginx-prometheus-exporter:1.1.0
+          args:
+            - --nginx.scrape-uri=http://127.0.0.1/stub_status
+          ports:
+            - containerPort: 9113
         - name: frontend
           image: {{ .Values.frontendImage }}:{{ .Values.frontendVersion }}
           ports:
@@ -69,4 +81,9 @@ spec:
     - port: 80
       targetPort: 80
       nodePort: {{ .Values.frontendNodePort }}
+      protocol: TCP
+    - name: metrics
+      port: 9113
+      targetPort: 9113
+      nodePort: 30082
       protocol: TCP
