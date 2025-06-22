@@ -99,8 +99,15 @@ spec:
             sh "git commit -m 'ci: Cập nhật image tag lên ${gitCommit}'"
             sh "git push origin main"
           }
-
         }
+      }
+    }
+  }
+
+  post {
+    always {
+      echo 'Pipeline đã kết thúc.'
+        cleanWs()
     }
   }
 }
