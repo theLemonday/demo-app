@@ -49,35 +49,35 @@ spec:
             }
         }
 
-        // stage('Build & Push Docker Image (with Kaniko)') {
-        //     steps {
-        //         // THAY ĐỔI: Chạy `script` ở ngoài `container` để lấy git commit trước
-        //         script {
-        //             // Bước 1: Lấy git commit hash trong container mặc định 'jnlp' (nơi có git)
-        //             def gitCommit = sh(script: 'git rev-parse HEAD', returnStdout: true).trim().substring(0, 8)
-        //             def images = ['frontend', 'backend']
-        //
-        //             for (image in images) {
-        //                 def dockerImageTag = "todo-${image}:${gitCommit}"
-        //                 echo "Building ${dockerImageTag}"
-        //
-        //                 container('kaniko') {
-        //                     stage('Use kaniko to build image') {
-        //                         sh """
-        //                         /kaniko/executor \\
-        //                         --cleanup \\
-        //                         --context `pwd`/${image} \\
-        //                         --dockerfile `pwd`/${image}/Dockerfile \\
-        //                         --destination lemonday/${dockerImageTag} && rm -rf /kaniko/*[0-9]* && rm -rf /kaniko/Dockerfile && mkdir -p /workspace
-        //                         """
-        //                     }
-        //                 }
-        //
-        //                 echo "Finished building ${dockerImageTag}"
-        //             }
-        //         }
-        //     }
-        // }
+        stage('Build & Push Docker Image (with Kaniko)') {
+            steps {
+                // THAY ĐỔI: Chạy `script` ở ngoài `container` để lấy git commit trước
+                script {
+                    // Bước 1: Lấy git commit hash trong container mặc định 'jnlp' (nơi có git)
+                    def gitCommit = sh(script: 'git rev-parse HEAD', returnStdout: true).trim().substring(0, 8)
+                    def images = ['frontend', 'backend']
+
+                    for (image in images) {
+                        def dockerImageTag = "todo-${image}:${gitCommit}"
+                        echo "Building ${dockerImageTag}"
+
+                        container('kaniko') {
+                            stage('Use kaniko to build image') {
+                                sh """
+                                /kaniko/executor \\
+                                --cleanup \\
+                                --context `pwd`/${image} \\
+                                --dockerfile `pwd`/${image}/Dockerfile \\
+                                --destination lemonday/${dockerImageTag} && rm -rf /kaniko/*[0-9]* && rm -rf /kaniko/Dockerfile && mkdir -p /workspace
+                                """
+                            }
+                        }
+
+                        echo "Finished building ${dockerImageTag}"
+                    }
+                }
+            }
+        }
 
         stage('Update K8s config repo') {
             steps {
