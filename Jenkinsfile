@@ -1,7 +1,7 @@
 pipeline {
-  agent {
-    kubernetes {
-      yaml """
+    agent {
+        kubernetes {
+            yaml '''
 apiVersion: v1
 kind: Pod
 spec:
@@ -27,88 +27,88 @@ spec:
       items:
         - key: .dockerconfigjson
           path: config.json
-"""
-    }
-  }
-
-  environment {
-    DOCKER_HUB_USER = "lemonday"
-    GIT_APP_REPO_URL = "https://github.com/theLemonday/demo-app"
-    GIT_CONFIG_REPO_URL = "https://github.com/theLemonday/demo-app-values"
-    GIT_CONFIG_REPO_CREDENTIALS_ID = "github-config-repo-creds"
-  }
-
-  stages {
-    stage('Checkout code') {
-      steps {
-        script {
-          echo 'Checking out source code'
-          git url: env.GIT_APP_REPO_URL, branch: 'main'
-          echo 'Checkout completed'
+'''
         }
-      }
     }
 
-    stage('Build & Push Docker Image (with Kaniko)') {
-      steps {
-        // THAY ĐỔI: Chạy `script` ở ngoài `container` để lấy git commit trước
-        script {
-          // Bước 1: Lấy git commit hash trong container mặc định 'jnlp' (nơi có git)
-          def gitCommit = sh(script: 'git rev-parse HEAD', returnStdout: true).trim().substring(0, 8)
-          def images = ["frontend", "backend"]
+    environment {
+        DOCKER_HUB_USER = 'lemonday'
+        GIT_APP_REPO_URL = 'https://github.com/theLemonday/demo-app'
+        GIT_CONFIG_REPO_URL = 'https://github.com/theLemonday/demo-app-values'
+        GIT_CONFIG_REPO_CREDENTIALS_ID = 'github-config-repo-creds'
+    }
 
-          for (image in images) {
-            def dockerImageTag = "todo-${image}:${gitCommit}"
-            echo "Building ${dockerImageTag}"
+    stages {
+        stage('Checkout code') {
+            steps {
+                script {
+                    echo 'Checking out source code'
+                    git url: env.GIT_APP_REPO_URL, branch: 'main'
+                    echo 'Checkout completed'
+                }
+            }
+        }
 
-            container('kaniko') {
-              sh """
+        stage('Build & Push Docker Image (with Kaniko)') {
+            steps {
+                // THAY ĐỔI: Chạy `script` ở ngoài `container` để lấy git commit trước
+                script {
+                    // Bước 1: Lấy git commit hash trong container mặc định 'jnlp' (nơi có git)
+                    def gitCommit = sh(script: 'git rev-parse HEAD', returnStdout: true).trim().substring(0, 8)
+                    def images = ['frontend', 'backend']
+
+                    for (image in images) {
+                        def dockerImageTag = "todo-${image}:${gitCommit}"
+                        echo "Building ${dockerImageTag}"
+
+                        container('kaniko') {
+                            sh """
               /kaniko/executor \\
               --context `pwd`/${image} \\
               --dockerfile `pwd`/${image}/Dockerfile \\
               --destination ${dockerImageTag}
               """
+                        }
+
+                        echo "Finished building ${dockerImageTag}"
+                    }
+                }
             }
-
-            echo "Finished building ${dockerImageTag}"
-          }
         }
-      }
-    }
 
-    stage ('Update K8s config repo') {
-      steps {
-        script {
-          def gitCommit = sh(script: 'git rev-parse HEAD', returnStdout: true).trim().substring(0, 8)
+        stage('Update K8s config repo') {
+            steps {
+                script {
+                    def gitCommit = sh(script: 'git rev-parse HEAD', returnStdout: true).trim().substring(0, 8)
 
-          echo "Begin update config repo"
+                    echo 'Begin update config repo'
 
-          withCredentials([usernamePassword(credentialsId: GIT_CONFIG_REPO_CREDENTIALS_ID, variable: 'GIT_USER', passwordVariable: 'GIT_PASS')]) {
-          sh "git clone -b main https://${GIT_USER}:${GIT_PASS}@github.com/theLemonday/demo-app-values config-repo"
+                    withCredentials([usernamePassword(credentialsId: GIT_CONFIG_REPO_CREDENTIALS_ID, variable: 'GIT_USER', passwordVariable: 'GIT_PASS')]) {
+                        sh "git clone -b main https://${GIT_USER}:${GIT_PASS}@github.com/theLemonday/demo-app-values config-repo"
 
-            dir ('config-repo') {
-              echo 'Update values.yaml'
+                        dir('config-repo') {
+                            echo 'Update values.yaml'
 
-              sh "sed -i 's|frontendVersion: .*|frontendVersion: ${gitCommit}|g' values.yaml"
-              sh "sed -i 's|backendVersion: .*|backendVersion: ${gitCommit}|g' values.yaml"
+                            sh "sed -i 's|frontendVersion: .*|frontendVersion: ${gitCommit}|g' values.yaml"
+                            sh "sed -i 's|backendVersion: .*|backendVersion: ${gitCommit}|g' values.yaml"
 
-              sh "git config user.email 'jenkins@example.com'"
-              sh "git config user.name 'Jenkins CI'"
+                            sh "git config user.email 'jenkins@example.com'"
+                            sh "git config user.name 'Jenkins CI'"
 
-              sh "git add values.yaml"
-              sh "git commit -m 'ci: Cập nhật image tag lên ${gitCommit}'"
-              sh "git push origin main"
+                            sh 'git add values.yaml'
+                            sh "git commit -m 'ci: Cập nhật image tag lên ${gitCommit}'"
+                            sh 'git push origin main'
+                        }
+                    }
+                }
             }
-          }
         }
-      }
     }
-  }
 
-  post {
-    always {
-      echo 'Pipeline đã kết thúc.'
-        cleanWs()
+    post {
+        always {
+            echo 'Pipeline đã kết thúc.'
+            cleanWs()
+        }
     }
-  }
 }
