@@ -49,12 +49,14 @@ spec:
         app: frontend
     spec:
       containers:
+        {{- if .Values.enabledFeatures.metrics }}
         - name: nginx-exporter
           image: nginx/nginx-prometheus-exporter:1.1.0
           args:
             - --nginx.scrape-uri=http://127.0.0.1/stub_status
           ports:
             - containerPort: 9113
+        {{- end }}
         - name: frontend
           image: {{ .Values.frontendImage }}:{{ .Values.frontendVersion }}
           ports:
@@ -83,8 +85,10 @@ spec:
       targetPort: 80
       nodePort: {{ .Values.frontendNodePort }}
       protocol: TCP
+    {{- if .Values.enabledFeatures.metrics }}
     - name: metrics
       port: 9113
       targetPort: 9113
       nodePort: 30082
       protocol: TCP
+    {{- end}}
