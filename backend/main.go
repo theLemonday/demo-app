@@ -9,10 +9,12 @@ import (
 	"slices"
 	"strconv"
 	"sync"
+	"time"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/go-chi/cors"
+	"github.com/go-chi/httprate"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
@@ -155,6 +157,7 @@ func main() {
 		MaxAge:           300, // Maximum value not ignored by any of major browsers
 	}))
 	r.Use(middleware.Logger)
+	r.Use(httprate.LimitByIP(10, time.Minute))
 
 	r.With(basicAuth).Get("/api/todos", getTodosHandler)
 	r.With(basicAuth, authorizeAdmin).Post("/api/todos", addTodoHandler)
