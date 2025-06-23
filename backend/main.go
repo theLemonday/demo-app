@@ -101,6 +101,12 @@ func addTodoHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
+
+	if newTodo.Title == "" {
+		http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
+		return
+	}
+
 	created := createTodo(newTodo)
 
 	todosCreated.Inc()
@@ -150,10 +156,10 @@ func main() {
 	}))
 	r.Use(middleware.Logger)
 
-	r.Get("/api/todos", getTodosHandler)
-	r.Post("/api/todos", addTodoHandler)
-	r.Post("/api/todos/{id}/toggle", toggleTodoHandler)
-	r.Delete("/api/todos/{id}", deleteTodoHandler)
+	r.With(basicAuth).Get("/api/todos", getTodosHandler)
+	r.With(basicAuth, authorizeAdmin).Post("/api/todos", addTodoHandler)
+	r.With(basicAuth, authorizeAdmin).Post("/api/todos/{id}/toggle", toggleTodoHandler)
+	r.With(basicAuth, authorizeAdmin).Delete("/api/todos/{id}", deleteTodoHandler)
 
 	r.Handle("/metrics", promhttp.Handler())
 
