@@ -89,6 +89,6 @@ spec:
     - name: metrics
       port: 9113
       targetPort: 9113
-      nodePort: 30082
+      nodePort: {{ .Values.frontendMetricsNodePort }}
       protocol: TCP
     {{- end}}

@@ -1,19 +1,24 @@
-# demo-app
+# 📝 Todo Fullstack App
 
-```bash
-# Get todos (as user)
-curl -u user:userpass http://localhost:8080/api/todos
+A fullstack web application for managing todos — built with **React**,
+**Golang**, and packaged for Kubernetes with **Helm**.  
+It supports optional features like **metrics**, and is ready for demo or
+production deployments.
 
-# Add todo (as admin)
-curl -u admin:adminpass -X POST http://localhost:8080/api/todos \
-  -H "Content-Type: application/json" \
-  -d '{"text":"Buy milk"}'
+## 🚀 Features
 
-# Delete todo with id 1 (as admin)
-curl -u admin:adminpass -X DELETE http://localhost:8080/api/todos/1
+- ✅ Create, update, delete todos
+- 🔍 Search and filter tasks
+- 📊 Optional Prometheus metrics endpoint
+- ⚙️ Helm chart for easy Kubernetes deployment
+- 📦 Dockerized frontend and backend
+- 🛡️ TLS-ready ingress (optional)
 
-# Unauthorized add todo (as user, should return 403)
-curl -u user:userpass -X POST http://localhost:8080/api/todos \
-  -H "Content-Type: application/json" \
-  -d '{"text":"Should fail"}'
-```
+---
+
+## 🛠️ Tech Stack
+
+- **Frontend**: React + TypeScript
+- **Backend**: Go + Fiber
+- **Deployment**: Helm, Kubernetes
+- **Observability**: Prometheus (optional)

@@ -2,6 +2,7 @@
 frontendImage: lemonday/todo-frontend
 frontendVersion: latest
 frontendNodePort: 30080
+frontendMetricsNodePort: 30082
 
 backendImage: lemonday/todo-backend
 backendVersion: latest
