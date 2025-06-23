@@ -8,4 +8,4 @@ backendVersion: latest
 
 enabledFeatures:
   logging: true
-  metrics: true
+  metrics: false

@@ -8,11 +8,11 @@ spec:
   replicas: 1
   selector:
     matchLabels:
-      app: backend
+      app.kubernetes.io/name: backend
   template:
     metadata:
       labels:
-        app: backend
+        app.kubernetes.io/name: backend
     spec:
       containers:
         - name: backend
@@ -30,7 +30,7 @@ metadata:
   namespace: fullstack-app
 spec:
   selector:
-    app: backend
+    app.kubernetes.io/name: backend
   {{- if or .Values.enabledFeatures.metrics .Values.enabledFeatures.logging }}
   type: NodePort
   ports:
